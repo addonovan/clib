@@ -1,0 +1,6 @@
+out/*
+obj/*
+bin/*
+*.sw[a-z]
+.ycm_extra_conf.py
+
