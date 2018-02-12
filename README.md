@@ -57,12 +57,12 @@ list_t(int) list = list(int);
 int i;
 for ( i = 0; i < 10; i++ )
 {
-list.push_back( &list, 5 * i );
+  list.push_back( &list, 5 * i );
 }
 
 while ( list.size > 0 )
 {
-printf( "%d\n", list.pop_back( &list ) );
+  printf( "%d\n", list.pop_back( &list ) );
 }
 
 // heap-allocated linked list
@@ -71,12 +71,12 @@ list_t(double)* list = list_u(double);
 int i;
 for ( i = 0; i < 10; i++ )
 {
-list->push_back( list, 5.0 * ( i + 1.5 ) );
+  list->push_back( list, 5.0 * ( i + 1.5 ) );
 }
 
 while ( list->size > 0 )
 {
-printf( "%lf\n", list->pop_back( list ) );
+  printf( "%lf\n", list->pop_back( list ) );
 }
 
 ```
