@@ -65,6 +65,8 @@ while ( list.size > 0 )
   printf( "%d\n", list.pop_back( &list ) );
 }
 
+list.destroy( &list );
+
 // heap-allocated linked list
 list_t(double)* list = list_u(double);
 
@@ -78,6 +80,8 @@ while ( list->size > 0 )
 {
   printf( "%lf\n", list->pop_back( list ) );
 }
+
+delete( list );
 
 ```
 
