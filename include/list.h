@@ -32,16 +32,13 @@
 // a const pointer
 #ifdef COPY_VALUE 
   #define REF_TYPE TYPE
+  #define CONST_REF_TYPE TYPE
 #else
   #define REF_TYPE TYPE*
+  #define CONST_REF_TYPE const TYPE*
 #endif
 
 #define TYPED_NAME( x ) CONCAT( x, CONCAT( _, TYPE ) )
-
-#if !defined( DESTRUCTOR ) && !defined( COPY_VALUE )
-  #error "Non-copy values must have specified a DESTRUCTOR!"
-  #define DESTRUCTOR( x ) ( void )( x );
-#endif
 
 /** 
  * The generates the structure's name (by appending a _t to
@@ -102,14 +99,14 @@ typedef struct LIST_VTABLE_T LIST_VTABLE_T;
 
 struct LIST_NODE_T
 {
-  TYPE data;
+  REF_TYPE data;
   LIST_NODE_T* prev;
   LIST_NODE_T* next;
 
   const LIST_NODE_VTABLE_T* fun;
 };
 
-void LIST_NODE_METHOD( init, TYPE data );
+void LIST_NODE_METHOD( init, REF_TYPE data );
 void LIST_NODE_METHOD( destroy );
 
 
@@ -127,14 +124,14 @@ struct LIST_T
 void LIST_METHOD( init );
 void LIST_METHOD( destroy );
 
-void LIST_METHOD( push_front, TYPE item );
-void LIST_METHOD( push_back, TYPE item );
+void LIST_METHOD( push_front, REF_TYPE item );
+void LIST_METHOD( push_back, REF_TYPE item );
 
-TYPE LIST_METHOD( pop_front);
-TYPE LIST_METHOD( pop_back);
+REF_TYPE LIST_METHOD( pop_front );
+REF_TYPE LIST_METHOD( pop_back );
 
-TYPE LIST_METHOD( remove, unsigned int index );
-REF_TYPE LIST_METHOD( get, unsigned int index );
+REF_TYPE LIST_METHOD( remove, unsigned int index );
+CONST_REF_TYPE LIST_METHOD( get, unsigned int index );
 
 
 
@@ -147,14 +144,14 @@ struct LIST_VTABLE_T
 {
   void ( *destroy )( LIST_T* );
   
-  void ( *push_front )( LIST_T*, TYPE );
-  void ( *push_back )( LIST_T*, TYPE );
+  void ( *push_front )( LIST_T*, REF_TYPE );
+  void ( *push_back )( LIST_T*, REF_TYPE );
 
-  TYPE ( *pop_front )( LIST_T* );
-  TYPE ( *pop_back )( LIST_T* );
+  REF_TYPE ( *pop_front )( LIST_T* );
+  REF_TYPE ( *pop_back )( LIST_T* );
 
-  TYPE ( *remove )( LIST_T*, unsigned int );
-  REF_TYPE ( *get )( LIST_T*, unsigned int );
+  REF_TYPE ( *remove )( LIST_T*, unsigned int );
+  CONST_REF_TYPE ( *get )( LIST_T*, unsigned int );
 };
 
 
@@ -162,7 +159,7 @@ struct LIST_VTABLE_T
 // list_node_t implementation
 //
 
-void LIST_NODE_METHOD( init, TYPE data )
+void LIST_NODE_METHOD( init, REF_TYPE data )
 {
   static LIST_NODE_VTABLE_T* vtable = NULL;
 
@@ -191,9 +188,9 @@ void LIST_NODE_METHOD( destroy )
   }
 
 #ifndef COPY_VALUE
-  if ( this->data != ( TYPE ) NULL )
+  if ( this->data != ( REF_TYPE ) NULL )
   {
-    DESTRUCTOR( this->data );
+    // run destructor
   }
 #endif
   memset( this, 0, sizeof( *this ) );
@@ -248,7 +245,7 @@ void LIST_METHOD( destroy )
 
 
 
-void LIST_METHOD( push_front, TYPE item )
+void LIST_METHOD( push_front, REF_TYPE item )
 {
   LIST_NODE_T* node = malloc( sizeof( LIST_NODE_T ) );
   LIST_NODE_INVOKE( init, node, item );
@@ -267,7 +264,7 @@ void LIST_METHOD( push_front, TYPE item )
   this->size += 1;
 }
 
-void LIST_METHOD( push_back, TYPE item )
+void LIST_METHOD( push_back, REF_TYPE item )
 {
   LIST_NODE_T* node = malloc( sizeof( LIST_NODE_T ) );
   LIST_NODE_INVOKE( init, node, item );
@@ -286,17 +283,17 @@ void LIST_METHOD( push_back, TYPE item )
   this->size += 1;
 }
 
-TYPE LIST_METHOD( pop_front )
+REF_TYPE LIST_METHOD( pop_front )
 {
   return LIST_INVOKE( remove, this, 0 );
 }
 
-TYPE LIST_METHOD( pop_back )
+REF_TYPE LIST_METHOD( pop_back )
 {
   return LIST_INVOKE( remove, this, this->size - 1 );
 }
 
-TYPE LIST_METHOD( remove, unsigned int index )
+REF_TYPE LIST_METHOD( remove, unsigned int index )
 {
   assert( this->size > index );
 
@@ -309,12 +306,12 @@ TYPE LIST_METHOD( remove, unsigned int index )
     current = current->next;
   }
 
-  TYPE item = current->data;
+  REF_TYPE item = current->data;
 
   // if it's not a copied value, then we're going to
   // need to prevent the destructor from deleting it
 #ifndef COPY_VALUE
-  current->data = ( TYPE ) NULL;
+  current->data = ( REF_TYPE ) NULL;
 #endif
 
   if ( current->next == NULL )
@@ -334,7 +331,7 @@ TYPE LIST_METHOD( remove, unsigned int index )
   return item; 
 }
 
-REF_TYPE LIST_METHOD( get, unsigned int index )
+CONST_REF_TYPE LIST_METHOD( get, unsigned int index )
 {
   // TODO start from back if index >= size/2
  
@@ -348,7 +345,7 @@ REF_TYPE LIST_METHOD( get, unsigned int index )
 #ifdef COPY_VALUE
   return current->data;
 #else
-  return &current->data;
+  return current->data;
 #endif
 }
 
@@ -364,6 +361,7 @@ REF_TYPE LIST_METHOD( get, unsigned int index )
 #undef STRUCT_NAME
 #undef METHOD_NAME
 #undef TYPED_NAME
+#undef CONST_REF_TYPE
 #undef REF_TYPE
 #undef COPY_VALUE
 #undef TYPE

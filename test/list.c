@@ -2,6 +2,10 @@
 #include <assert.h>
 #include "primitive_lists.h"
 
+#include "basic_struct.h"
+#define TYPE basic_struct_t
+#include "list.h"
+
 void test_primitive_list();
 void test_struct_list();
 
@@ -36,6 +40,30 @@ void test_primitive_list()
 
 void test_struct_list()
 {
+  list_t(basic_struct_t) list = list(basic_struct_t);
+
+  for ( int i = 0; i < 10; i++ )
+  {
+    basic_struct_t* item = malloc( sizeof( basic_struct_t ) );
+    basic_struct_init( item, "hello world", i, 5.34 * i );
+    list.fun->push_back( &list, item );
+  }
+
+  while ( list.size > 0 )
+  {
+    basic_struct_t* item = list.fun->pop_back( &list );
+    printf( 
+        "%d = { %s, %d, %lf }\n", 
+        list.size, 
+        item->string,
+        *item->int_ptr,
+        item->number
+    );
+    item->fun->destroy( item );
+    free( item );
+  }
+
+  list.fun->destroy( &list );
 }
 
 
