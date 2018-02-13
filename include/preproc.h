@@ -14,7 +14,7 @@
       tmp2;                                                     \
     })
 
-#define delete( x ) ({                                          \
+#define delete(x) ({                                            \
       x->destroy( x );                                          \
       free( x );                                                \
       x = NULL;                                                 \

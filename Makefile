@@ -14,14 +14,13 @@ SRCS      := $(wildcard $(SRC)/*.c)
 TEST_OBJS := $(patsubst $(TEST_SRC)/%.c, $(OBJ)/%.o, $(TEST_SRCS))
 OBJS      := $(patsubst      $(SRC)/%.c, $(OBJ)/%.o,      $(SRCS))
 
-TEST_OUTS := $(patsubst $(TEST_SRC)/%.c, $(BIN)/%.out, $(TEST_SRCS))
+TEST_OUTS := $(patsubst $(TEST_SRC)/%.c, $(BIN)/test_%.out, $(TEST_SRCS))
 
 tests: makedirs $(TEST_OUTS)
 .PHONY: tests
 
 $(TEST_OUTS): %.out: $(TEST_OBJS) $(OBJS)
 	$(LINKER) $(CFLAGS) $^ -o $@
-	./$@
 
 $(TEST_OBJS): %.o: $(TEST_SRCS) $(SRCS)
 	$(CC) $(CFLAGS) -I$(INCLUDE) -c $< -o $@

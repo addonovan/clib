@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "preproc.h"
 
 #endif // END OF INCLUDE GUARD
@@ -261,6 +262,8 @@ TYPE LIST_METHOD( pop_back )
 
 TYPE LIST_METHOD( remove, unsigned int index )
 {
+  assert( this->size > index );
+
   // TODO start from back if index >= size/2
  
   LIST_NODE_T* current = this->head;
@@ -277,6 +280,15 @@ TYPE LIST_METHOD( remove, unsigned int index )
 #ifndef COPY_VALUE
   current->data = ( TYPE ) NULL;
 #endif
+
+  if ( current->next == NULL )
+  {
+    this->tail = current->prev;
+  }
+  if ( current->prev == NULL )
+  {
+    this->head = current->next;
+  }
 
   LIST_NODE_INVOKE( destroy, current );
   free( current );
