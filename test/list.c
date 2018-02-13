@@ -18,20 +18,20 @@ void test_primitive_list()
 
   for ( int i = 0; i < 10; i++ )
   {
-    list.push_back( &list, i );
+    list.fun->push_back( &list, i );
   }
 
   while ( list.size > 0 )
   {
     int size = ( int ) list.size - 1;
-    int item = list.pop_back( &list );
+    int item = list.fun->pop_back( &list );
     if ( item != size )
     {
       printf( "Expected: %d, Actual: %d\n", size, item );
     }
   }
 
-  list.destroy( &list );
+  list.fun->destroy( &list );
 }
 
 void test_struct_list()

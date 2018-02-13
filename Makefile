@@ -6,7 +6,7 @@ OBJ       := obj
 
 CC 	  := gcc
 LINKER 	  := gcc
-CFLAGS 	  := -Wall -Wextra -Werror -g3 
+CFLAGS 	  := -Wall -Wextra -Werror -g3
 
 TEST_SRCS := $(wildcard $(TEST_SRC)/*.c)
 SRCS      := $(wildcard $(SRC)/*.c)

@@ -65,6 +65,9 @@
 /** convenience for STRUCT_NAME( list ) */
 #define LIST_T      STRUCT_NAME( list )
 
+#define LIST_NODE_VTABLE_T STRUCT_NAME( list_node_vtable_t )
+#define LIST_VTABLE_T STRUCT_NAME( list_vtable_t )
+
 /** 
  * convenient way to call/declare/define a method for
  * a list
@@ -90,6 +93,9 @@
 typedef struct LIST_NODE_T LIST_NODE_T; 
 typedef struct LIST_T      LIST_T; 
 
+typedef struct LIST_NODE_VTABLE_T LIST_NODE_VTABLE_T;
+typedef struct LIST_VTABLE_T LIST_VTABLE_T;
+
 //
 // Define all necessary structs
 //
@@ -100,11 +106,13 @@ struct LIST_NODE_T
   LIST_NODE_T* prev;
   LIST_NODE_T* next;
 
-  void ( *destroy )( LIST_NODE_T* this );
+  const LIST_NODE_VTABLE_T* fun;
 };
 
 void LIST_NODE_METHOD( init, TYPE data );
 void LIST_NODE_METHOD( destroy );
+
+
 
 struct LIST_T
 {
@@ -113,17 +121,7 @@ struct LIST_T
 
   unsigned int size;
 
-  void ( *destroy )( LIST_T* );
-  
-  void ( *push_front )( LIST_T*, TYPE );
-  void ( *push_back )( LIST_T*, TYPE );
-
-  TYPE ( *pop_front )( LIST_T* );
-  TYPE ( *pop_back )( LIST_T* );
-
-  TYPE ( *remove )( LIST_T*, unsigned int );
-  REF_TYPE ( *get )( LIST_T*, unsigned int );
-
+  const LIST_VTABLE_T* fun;
 };
 
 void LIST_METHOD( init );
@@ -138,16 +136,46 @@ TYPE LIST_METHOD( pop_back);
 TYPE LIST_METHOD( remove, unsigned int index );
 REF_TYPE LIST_METHOD( get, unsigned int index );
 
+
+
+struct LIST_NODE_VTABLE_T
+{
+  void ( *destroy )( LIST_NODE_T* this );
+};
+
+struct LIST_VTABLE_T
+{
+  void ( *destroy )( LIST_T* );
+  
+  void ( *push_front )( LIST_T*, TYPE );
+  void ( *push_back )( LIST_T*, TYPE );
+
+  TYPE ( *pop_front )( LIST_T* );
+  TYPE ( *pop_back )( LIST_T* );
+
+  TYPE ( *remove )( LIST_T*, unsigned int );
+  REF_TYPE ( *get )( LIST_T*, unsigned int );
+};
+
+
 //
 // list_node_t implementation
 //
 
 void LIST_NODE_METHOD( init, TYPE data )
 {
+  static LIST_NODE_VTABLE_T* vtable = NULL;
+
+  if ( vtable == NULL )
+  {
+    vtable = calloc( 1, sizeof( LIST_NODE_VTABLE_T ) );
+    vtable->destroy = &LIST_NODE_METHOD_NAME( destroy );
+  }
+
+  this->fun = vtable;
   this->data = data;
   this->prev = NULL;
   this->next = NULL;
-  this->destroy = &LIST_NODE_METHOD_NAME( destroy );
 }
 
 void LIST_NODE_METHOD( destroy )
@@ -177,16 +205,24 @@ void LIST_NODE_METHOD( destroy )
 
 void LIST_METHOD( init )
 {
+  static LIST_VTABLE_T* vtable = NULL;
+
+  if ( vtable == NULL )
+  {
+    vtable = calloc( 1, sizeof( LIST_VTABLE_T ) );
+    vtable->destroy = &LIST_METHOD_NAME( destroy );
+    vtable->push_front = &LIST_METHOD_NAME( push_front );
+    vtable->push_back = &LIST_METHOD_NAME( push_back );
+    vtable->pop_front = &LIST_METHOD_NAME( pop_front );
+    vtable->pop_back = &LIST_METHOD_NAME( pop_back );
+    vtable->remove = &LIST_METHOD_NAME( remove );
+    vtable->get = &LIST_METHOD_NAME( get );
+  }
+
+  this->fun = vtable;
   this->head = NULL;
   this->tail = NULL;
   this->size = 0;
-  this->destroy = &LIST_METHOD_NAME( destroy );
-  this->push_front = &LIST_METHOD_NAME( push_front );
-  this->push_back = &LIST_METHOD_NAME( push_back );
-  this->pop_front = &LIST_METHOD_NAME( pop_front );
-  this->pop_back = &LIST_METHOD_NAME( pop_back );
-  this->remove = &LIST_METHOD_NAME( remove );
-  this->get = &LIST_METHOD_NAME( get );
 }
 
 void LIST_METHOD( destroy )
@@ -318,6 +354,8 @@ REF_TYPE LIST_METHOD( get, unsigned int index )
 
 // don't leak any of our preprocessor symbols
 #undef LIST_INVOKE
+#undef LIST_NODE_VTABLE_T
+#undef LIST_VTABLE_T
 #undef LIST_METHOD
 #undef LIST_NODE_INVOKE
 #undef LIST_NODE_METHOD
