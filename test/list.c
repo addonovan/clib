@@ -1,7 +1,18 @@
 #include <stdio.h>
+#include <assert.h>
 #include "primitive_lists.h"
 
+void test_primitive_list();
+void test_struct_list();
+
 int main()
+{
+  test_primitive_list();
+  test_struct_list();
+  return 0;
+}
+
+void test_primitive_list()
 {
   list_t(int) list = list(int);
 
@@ -12,10 +23,19 @@ int main()
 
   while ( list.size > 0 )
   {
-    printf( "%d %d\n", list.size, list.pop_front( &list ) );
+    int size = ( int ) list.size - 1;
+    int item = list.pop_back( &list );
+    if ( item != size )
+    {
+      printf( "Expected: %d, Actual: %d\n", size, item );
+    }
   }
-  
-  return 0;
+
+  list.destroy( &list );
+}
+
+void test_struct_list()
+{
 }
 
 
