@@ -5,16 +5,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define _CONCAT(a, b) a ## b
-#define CONCAT(a, b) _CONCAT(a, b)
+#define _CONCAT( a, b ) a ## b
+#define CONCAT( a, b ) _CONCAT( a, b )
 
-#define new(x) ({                                               \
+#define new( x ) ({                                             \
       void* tmp = malloc( sizeof( y ) );                        \
       memcpy( tmp, &y, sizeof( y ) );                           \
       tmp2;                                                     \
     })
 
-#define delete(x) ({                                            \
+#define delete( x ) ({                                          \
       x->destroy( x );                                          \
       free( x );                                                \
       x = NULL;                                                 \
