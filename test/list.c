@@ -22,7 +22,7 @@ void test_primitive_list()
 
   for ( int i = 0; i < 10; i++ )
   {
-    list.fun->push_back( &list, i );
+    list.fun->enqueue( &list, i );
   }
 
   while ( list.size > 0 )
@@ -46,7 +46,7 @@ void test_struct_list()
   {
     basic_struct_t* item = malloc( sizeof( basic_struct_t ) );
     basic_struct_init( item, "hello world", i, 5.34 * i );
-    list.fun->push_back( &list, item );
+    list.fun->enqueue( &list, item );
   }
 
   while ( list.size > 0 )

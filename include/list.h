@@ -77,10 +77,10 @@ DEFINE_VTABLE(
   METHOD(void, L_P, init,    L_T* this),
   METHOD(void, L_P, destroy, L_T* this),
 
-  METHOD(void, L_P, push_front, L_T* this, REF_TYPE item),
-  METHOD(void, L_P, push_back,  L_T* this, REF_TYPE item),
+  METHOD(void, L_P, push, L_T* this, REF_TYPE item),
+  METHOD(void, L_P, enqueue,  L_T* this, REF_TYPE item),
 
-  METHOD(REF_TYPE, L_P, pop_front, L_T* this),
+  METHOD(REF_TYPE, L_P, pop, L_T* this),
   METHOD(REF_TYPE, L_P, pop_back,  L_T* this),
 
   METHOD(REF_TYPE, L_P, remove, L_T* this, unsigned int index),
@@ -156,9 +156,9 @@ void METHOD_NAME(L_P, init)( L_T* this )
 	{
 		L_VT = calloc( 1, sizeof( *L_VT ) );
     L_VT->destroy = &METHOD_NAME(L_P,  destroy );
-    L_VT->push_front = &METHOD_NAME(L_P,  push_front );
-    L_VT->push_back = &METHOD_NAME(L_P,  push_back );
-    L_VT->pop_front = &METHOD_NAME(L_P,  pop_front );
+    L_VT->push = &METHOD_NAME(L_P,  push );
+    L_VT->enqueue = &METHOD_NAME(L_P,  enqueue );
+    L_VT->pop = &METHOD_NAME(L_P,  pop );
     L_VT->pop_back = &METHOD_NAME(L_P,  pop_back );
     L_VT->remove = &METHOD_NAME(L_P,  remove );
     L_VT->get = &METHOD_NAME(L_P,  get );
@@ -198,7 +198,7 @@ void METHOD_NAME(L_P, destroy)( L_T* this )
 }
 
 
-void METHOD_NAME(L_P, push_front)( L_T* this, REF_TYPE item )
+void METHOD_NAME(L_P, push)( L_T* this, REF_TYPE item )
 {
   LN_T* node = malloc( sizeof( LN_T ) );
   LN_VT->init( node, item );
@@ -217,7 +217,7 @@ void METHOD_NAME(L_P, push_front)( L_T* this, REF_TYPE item )
   this->size += 1;
 }
 
-void METHOD_NAME(L_P, push_back)( L_T* this, REF_TYPE item )
+void METHOD_NAME(L_P, enqueue)( L_T* this, REF_TYPE item )
 {
   LN_T* node = malloc( sizeof( LN_T ) );
   LN_VT->init( node, item );
@@ -236,7 +236,7 @@ void METHOD_NAME(L_P, push_back)( L_T* this, REF_TYPE item )
   this->size += 1;
 }
 
-REF_TYPE METHOD_NAME(L_P, pop_front)( L_T* this )
+REF_TYPE METHOD_NAME(L_P, pop)( L_T* this )
 {
 	return L_VT->remove( this, 0 );
 }
