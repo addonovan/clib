@@ -2,22 +2,25 @@
 #define __CLIB_LIST_H__
 
 #define list_t( x ) list_##x##_t
-#define list( x ) ({                                            \
-      list_t( x ) tmp;                                          \
-      list_##x##_init( &tmp );                                  \
-      tmp;                                                      \
+#define list_node_t( x ) list_node_##x##_t
+
+#define list( x ) ({                                                           \
+      list_t( x ) tmp;                                                         \
+      list_##x##_init( &tmp );                                                 \
+      tmp;                                                                     \
     })
 
-#define list_u( x ) ({                                          \
-      list_t( x )* tmp = malloc( sizeof( list_t( x ) ) );       \
-      list_##x##_init( tmp );                                   \
-      tmp;                                                      \
+#define list_u( x ) ({                                                         \
+      list_t( x )* tmp = malloc( sizeof( list_t( x ) ) );                      \
+      list_##x##_init( tmp );                                                  \
+      tmp;                                                                     \
     })
 
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include "preproc.h"
+#include "vtable.h"
 
 #endif // END OF INCLUDE GUARD
 
@@ -38,144 +41,91 @@
   #define CONST_REF_TYPE const TYPE*
 #endif
 
-#define TYPED_NAME( x ) CONCAT( x, CONCAT( _, TYPE ) )
+#define LN_P PREFIX(list_node, TYPE)
+#define L_P  PREFIX(list, TYPE)
 
-/** 
- * The generates the structure's name (by appending a _t to
- * typed name
- */
-#define STRUCT_NAME( x ) CONCAT( TYPED_NAME( x ), _t )
+#define LN_T STRUCT_TYPE(list_node, TYPE)
+#define L_T  STRUCT_TYPE(list, TYPE)
 
-/**
- * A method name is just the method's name appended to the
- * typed name
- */
-#define METHOD_NAME( x, method ) CONCAT( TYPED_NAME( x ), _##method )
+#define LN_VT CAT(__vtable, LN_P)
+#define L_VT  CAT(__vtable, L_P)
 
-#define LIST_METHOD_NAME( method )                              \
-  CONCAT( TYPED_NAME( list ), _##method )
-#define LIST_NODE_METHOD_NAME( method )                         \
-  CONCAT( TYPED_NAME( list_node ), _##method )
-
-/** convenience for STRUCT_NAME( list_node ) */
-#define LIST_NODE_T STRUCT_NAME( list_node )
-/** convenience for STRUCT_NAME( list ) */
-#define LIST_T      STRUCT_NAME( list )
-
-#define LIST_NODE_VTABLE_T STRUCT_NAME( list_node_vtable_t )
-#define LIST_VTABLE_T STRUCT_NAME( list_vtable_t )
-
-/** 
- * convenient way to call/declare/define a method for
- * a list
- */
-#define LIST_METHOD( name, ... )                                \
-  METHOD_NAME( list, name ) ( LIST_T* this, ##__VA_ARGS__ )
-#define LIST_INVOKE( name, ... )                                \
-  METHOD_NAME( list, name ) ( __VA_ARGS__ )
-
-/** 
- * convenient way to call/declare/define a method for
- * a list
- */
-#define LIST_NODE_METHOD( name, ... )                           \
-  METHOD_NAME( list_node, name ) ( LIST_NODE_T* this, ##__VA_ARGS__ )
-#define LIST_NODE_INVOKE( name, ... )                           \
-  METHOD_NAME( list_node, name ) ( __VA_ARGS__ )
+#define LN_METHOD(x) METHOD_NAME(LN_P, x)
+#define L_METHOD(x) METHOD_NAME(L_P, x)
 
 //
 // Forward declare all of the typedefs
 //
 
-typedef struct LIST_NODE_T LIST_NODE_T; 
-typedef struct LIST_T      LIST_T; 
-
-typedef struct LIST_NODE_VTABLE_T LIST_NODE_VTABLE_T;
-typedef struct LIST_VTABLE_T LIST_VTABLE_T;
+typedef struct LN_T LN_T; 
+typedef struct L_T L_T;
 
 //
-// Define all necessary structs
+// Vtables
 //
 
-struct LIST_NODE_T
+DEFINE_VTABLE(
+  LN_T, 
+  METHOD(void, LN_P, init, LN_T* this, REF_TYPE data),
+  METHOD(void, LN_P, destroy, LN_T* this),
+)
+
+vtable_t(LN_T)* LN_VT = NULL;
+
+DEFINE_VTABLE(
+  L_T,
+  METHOD(void, L_P, init,    L_T* this),
+  METHOD(void, L_P, destroy, L_T* this),
+
+  METHOD(void, L_P, push_front, L_T* this, REF_TYPE item),
+  METHOD(void, L_P, push_back,  L_T* this, REF_TYPE item),
+
+  METHOD(REF_TYPE, L_P, pop_front, L_T* this),
+  METHOD(REF_TYPE, L_P, pop_back,  L_T* this),
+
+  METHOD(REF_TYPE, L_P, remove, L_T* this, unsigned int index),
+
+  METHOD(CONST_REF_TYPE, L_P, get, L_T* this, unsigned int index)
+)
+
+vtable_t(L_T)* L_VT = NULL;
+
+//
+// Struct definitions
+//
+
+struct LN_T
 {
   REF_TYPE data;
-  LIST_NODE_T* prev;
-  LIST_NODE_T* next;
+  LN_T* prev;
+  LN_T* next;
 
-  const LIST_NODE_VTABLE_T* fun;
+  const vtable_t(LN_T)* fun;
 };
 
-void LIST_NODE_METHOD( init, REF_TYPE data );
-void LIST_NODE_METHOD( destroy );
-
-
-
-struct LIST_T
+struct L_T
 {
-  LIST_NODE_T* head;
-  LIST_NODE_T* tail;
+  LN_T* head;
+  LN_T* tail;
 
   unsigned int size;
 
-  const LIST_VTABLE_T* fun;
+  const vtable_t(L_T)* fun;
 };
-
-void LIST_METHOD( init );
-void LIST_METHOD( destroy );
-
-void LIST_METHOD( push_front, REF_TYPE item );
-void LIST_METHOD( push_back, REF_TYPE item );
-
-REF_TYPE LIST_METHOD( pop_front );
-REF_TYPE LIST_METHOD( pop_back );
-
-REF_TYPE LIST_METHOD( remove, unsigned int index );
-CONST_REF_TYPE LIST_METHOD( get, unsigned int index );
-
-
-
-struct LIST_NODE_VTABLE_T
-{
-  void ( *destroy )( LIST_NODE_T* this );
-};
-
-struct LIST_VTABLE_T
-{
-  void ( *destroy )( LIST_T* );
-  
-  void ( *push_front )( LIST_T*, REF_TYPE );
-  void ( *push_back )( LIST_T*, REF_TYPE );
-
-  REF_TYPE ( *pop_front )( LIST_T* );
-  REF_TYPE ( *pop_back )( LIST_T* );
-
-  REF_TYPE ( *remove )( LIST_T*, unsigned int );
-  CONST_REF_TYPE ( *get )( LIST_T*, unsigned int );
-};
-
 
 //
 // list_node_t implementation
 //
 
-void LIST_NODE_METHOD( init, REF_TYPE data )
+void METHOD_NAME(LN_P, init)( LN_T* this, REF_TYPE data )
 {
-  static LIST_NODE_VTABLE_T* vtable = NULL;
-
-  if ( vtable == NULL )
-  {
-    vtable = calloc( 1, sizeof( LIST_NODE_VTABLE_T ) );
-    vtable->destroy = &LIST_NODE_METHOD_NAME( destroy );
-  }
-
-  this->fun = vtable;
+  this->fun = LN_VT;
   this->data = data;
   this->prev = NULL;
   this->next = NULL;
 }
 
-void LIST_NODE_METHOD( destroy )
+void METHOD_NAME(LN_P, destroy)( LN_T* this )
 {
   // maintain the surrounding nodes' linkage
   if ( this->prev != NULL )
@@ -200,43 +150,47 @@ void LIST_NODE_METHOD( destroy )
 // list_node implementation
 //
 
-void LIST_METHOD( init )
+void METHOD_NAME(L_P, init)( L_T* this )
 {
-  static LIST_VTABLE_T* vtable = NULL;
+	if ( L_VT == NULL )
+	{
+		L_VT = calloc( 1, sizeof( *L_VT ) );
+    L_VT->destroy = &METHOD_NAME(L_P,  destroy );
+    L_VT->push_front = &METHOD_NAME(L_P,  push_front );
+    L_VT->push_back = &METHOD_NAME(L_P,  push_back );
+    L_VT->pop_front = &METHOD_NAME(L_P,  pop_front );
+    L_VT->pop_back = &METHOD_NAME(L_P,  pop_back );
+    L_VT->remove = &METHOD_NAME(L_P,  remove );
+    L_VT->get = &METHOD_NAME(L_P,  get );
 
-  if ( vtable == NULL )
-  {
-    vtable = calloc( 1, sizeof( LIST_VTABLE_T ) );
-    vtable->destroy = &LIST_METHOD_NAME( destroy );
-    vtable->push_front = &LIST_METHOD_NAME( push_front );
-    vtable->push_back = &LIST_METHOD_NAME( push_back );
-    vtable->pop_front = &LIST_METHOD_NAME( pop_front );
-    vtable->pop_back = &LIST_METHOD_NAME( pop_back );
-    vtable->remove = &LIST_METHOD_NAME( remove );
-    vtable->get = &LIST_METHOD_NAME( get );
-  }
+		// while we're at it, let's create the vt for our nodes
+		// so we don't have to worry about it in the future
+		LN_VT = calloc( 1, sizeof( *LN_VT ) );
+	 	LN_VT->init = &METHOD_NAME(LN_P, init);
+		LN_VT->destroy = &METHOD_NAME(LN_P, destroy);
+  } 
 
-  this->fun = vtable;
+  this->fun = L_VT;
   this->head = NULL;
   this->tail = NULL;
   this->size = 0;
 }
 
-void LIST_METHOD( destroy )
+void METHOD_NAME(L_P, destroy)( L_T* this )
 {
   // if we have no elements, there's nothing to free
   if ( this->size == 0 ) return;
 
   // free all of our nodes
   // (n.b. list_node_*_destroy will fix linkage
-  LIST_NODE_T* current = this->head;
+  LN_T* current = this->head;
   while ( current->next != NULL )
   {
-    LIST_NODE_T* next = current->next;
-    LIST_NODE_INVOKE( destroy, next );
+    LN_T* next = current->next;
+		LN_VT->destroy( next );
     free( next );
   }
-  LIST_NODE_INVOKE( destroy, current );
+  LN_VT->destroy( current );
   free( current );
 
   // zero ourselves out to indicate that we're dead
@@ -244,11 +198,10 @@ void LIST_METHOD( destroy )
 }
 
 
-
-void LIST_METHOD( push_front, REF_TYPE item )
+void METHOD_NAME(L_P, push_front)( L_T* this, REF_TYPE item )
 {
-  LIST_NODE_T* node = malloc( sizeof( LIST_NODE_T ) );
-  LIST_NODE_INVOKE( init, node, item );
+  LN_T* node = malloc( sizeof( LN_T ) );
+  LN_VT->init( node, item );
 
   node->next = this->head;
   if ( this->size == 0 )
@@ -264,10 +217,10 @@ void LIST_METHOD( push_front, REF_TYPE item )
   this->size += 1;
 }
 
-void LIST_METHOD( push_back, REF_TYPE item )
+void METHOD_NAME(L_P, push_back)( L_T* this, REF_TYPE item )
 {
-  LIST_NODE_T* node = malloc( sizeof( LIST_NODE_T ) );
-  LIST_NODE_INVOKE( init, node, item );
+  LN_T* node = malloc( sizeof( LN_T ) );
+  LN_VT->init( node, item );
 
   node->prev = this->tail;
   if ( this->size == 0 )
@@ -283,23 +236,23 @@ void LIST_METHOD( push_back, REF_TYPE item )
   this->size += 1;
 }
 
-REF_TYPE LIST_METHOD( pop_front )
+REF_TYPE METHOD_NAME(L_P, pop_front)( L_T* this )
 {
-  return LIST_INVOKE( remove, this, 0 );
+	return L_VT->remove( this, 0 );
 }
 
-REF_TYPE LIST_METHOD( pop_back )
+REF_TYPE METHOD_NAME(L_P, pop_back)( L_T* this )
 {
-  return LIST_INVOKE( remove, this, this->size - 1 );
+	return L_VT->remove( this, this->size - 1 );
 }
 
-REF_TYPE LIST_METHOD( remove, unsigned int index )
+REF_TYPE METHOD_NAME(L_P, remove)( L_T* this, unsigned int index )
 {
   assert( this->size > index );
 
   // TODO start from back if index >= size/2
  
-  LIST_NODE_T* current = this->head;
+  LN_T* current = this->head;
   unsigned int i;
   for ( i = 0; i < index; i++ )
   {
@@ -323,7 +276,7 @@ REF_TYPE LIST_METHOD( remove, unsigned int index )
     this->head = current->next;
   }
 
-  LIST_NODE_INVOKE( destroy, current );
+	LN_VT->destroy( current );
   free( current );
 
   this->size -= 1;
@@ -331,11 +284,11 @@ REF_TYPE LIST_METHOD( remove, unsigned int index )
   return item; 
 }
 
-CONST_REF_TYPE LIST_METHOD( get, unsigned int index )
+CONST_REF_TYPE METHOD_NAME(L_P, get)( L_T* this, unsigned int index )
 {
   // TODO start from back if index >= size/2
  
-  LIST_NODE_T* current = this->head;
+  LN_T* current = this->head;
   unsigned int i;
   for ( i = 0; i < index; i++ )
   {
@@ -350,17 +303,14 @@ CONST_REF_TYPE LIST_METHOD( get, unsigned int index )
 }
 
 // don't leak any of our preprocessor symbols
-#undef LIST_INVOKE
-#undef LIST_NODE_VTABLE_T
-#undef LIST_VTABLE_T
-#undef LIST_METHOD
-#undef LIST_NODE_INVOKE
-#undef LIST_NODE_METHOD
-#undef LIST_T
-#undef LIST_NODE_T
-#undef STRUCT_NAME
-#undef METHOD_NAME
-#undef TYPED_NAME
+#undef L_METHOD
+#undef LN_METHOD
+#undef L_VT
+#undef LN_VT
+#undef L_T
+#undef LN_T
+#undef L_P
+#undef LN_P
 #undef CONST_REF_TYPE
 #undef REF_TYPE
 #undef COPY_VALUE
