@@ -1,36 +1,40 @@
-PRODUCT := example
-BINDIR := bin
-INCDIR := include
-SRCDIR := src
-OBJDIR := obj
-OUTDIR := out
+BIN 	  := bin
+INCLUDE	  := include
+SRC 	  := src
+TEST_SRC  := test
+OBJ       := obj
 
-CC := gcc
-LINKER := gcc
-INCDIRS := -I$(INCDIR)
-CFLAGS := -Wall -Wextra -Werror -g3 
+CC 	  := gcc
+LINKER 	  := gcc
+CFLAGS 	  := -Wall -Wextra -Werror -g3
 
-SRCFILES := $(wildcard $(SRCDIR)/*.c)
-OBJFILES := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCFILES))
-OUTFILES := $(patsubst $(SRCDIR)/%.c,$(OUTDIR)/%.c,$(SRCFILES))
+TEST_SRCS := $(wildcard $(TEST_SRC)/*.c)
+SRCS      := $(wildcard $(SRC)/*.c)
 
-build: makedirs $(BINDIR)/$(PRODUCT)
-.PHONY: build
+TEST_OBJS := $(patsubst $(TEST_SRC)/%.c, $(OBJ)/%.o, $(TEST_SRCS))
+OBJS      := $(patsubst      $(SRC)/%.c, $(OBJ)/%.o,      $(SRCS))
 
-cpp: makedirs $(OUTFILES)
+TEST_OUTS := $(patsubst $(TEST_SRC)/%.c, $(BIN)/test_%.out, $(TEST_SRCS))
 
-$(BINDIR)/$(PRODUCT): $(OBJFILES)
+tests: makedirs $(TEST_OUTS)
+.PHONY: tests
+
+$(TEST_OUTS): %.out: $(TEST_OBJS) $(OBJS)
 	$(LINKER) $(CFLAGS) $^ -o $@
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c $(INCDIR)/*.h
-	$(CC) $(CFLAGS) $(INCDIRS) -c $< -o $@
+$(TEST_OBJS): %.o: $(TEST_SRCS) $(SRCS)
+	$(CC) $(CFLAGS) -I$(INCLUDE) -c $< -o $@
 
-$(OUTDIR)/%.c: $(SRCDIR)/%.c $(INCDIR)/*.h
-	$(CC) $(CFLAGS) -E $(INCDIRS) -c $< -o $@
+$(OBJS): %.o: $(SRCS)
+	$(CC) $(CFLAGS) -I$(INCLUDE) -c $< -o $@
 
 makedirs:
-	@mkdir -p $(BINDIR)
-	@mkdir -p $(OBJDIR)
-	@mkdir -p $(OUTDIR)
+	@mkdir -p $(BIN)
+	@mkdir -p $(OBJ)
 .PHONY: makedirs
+
+clean:
+	@rm -rf $(BIN)
+	@rm -rf $(OBJ)
+.PHONY: clean
 
