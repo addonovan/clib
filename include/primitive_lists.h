@@ -9,5 +9,14 @@
 #define COPY_VALUE
 #include "list.h"
 
+typedef char* string;
+#define TYPE string
+#define COPY_VALUE
+#include "list.h"
+
+#define TYPE char
+#define COPY_VALUE
+#include "list.h"
+
 #endif
 

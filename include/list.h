@@ -4,6 +4,8 @@
 #define list_t( x ) list_##x##_t
 #define list_node_t( x ) list_node_##x##_t
 
+#define list_iter_t( x ) CAT(iter_, list_node_t(x))
+
 #define list( x ) ({                                                           \
       list_t( x ) tmp;                                                         \
       list_##x##_init( &tmp );                                                 \
@@ -53,6 +55,8 @@
 #define LN_METHOD(x) METHOD_NAME(LN_P, x)
 #define L_METHOD(x) METHOD_NAME(L_P, x)
 
+#if defined(HEADER_ONLY)
+
 //
 // Forward declare all of the typedefs
 //
@@ -85,7 +89,7 @@ DEFINE_VTABLE(
 
   METHOD(REF_TYPE, L_P, remove, L_T* this, unsigned int index),
 
-  METHOD(CONST_REF_TYPE, L_P, get, L_T* this, unsigned int index)
+  METHOD(CONST_REF_TYPE, L_P, get, const L_T* this, unsigned int index)
 )
 
 vtable_t(L_T)* L_VT = NULL;
@@ -112,6 +116,9 @@ struct L_T
 
   const vtable_t(L_T)* fun;
 };
+
+
+#else
 
 //
 // list_node_t implementation
@@ -147,14 +154,14 @@ void METHOD_NAME(LN_P, destroy)( LN_T* this )
 }
 
 //
-// list_node implementation
+// list implementation
 //
 
-void METHOD_NAME(L_P, init)( L_T* this )
+DEF_METHOD(void, L_P, init,    L_T* this)
 {
-	if ( L_VT == NULL )
-	{
-		L_VT = calloc( 1, sizeof( *L_VT ) );
+  if ( L_VT == NULL )
+  {
+    L_VT = calloc( 1, sizeof( *L_VT ) );
     L_VT->destroy = &METHOD_NAME(L_P,  destroy );
     L_VT->push = &METHOD_NAME(L_P,  push );
     L_VT->enqueue = &METHOD_NAME(L_P,  enqueue );
@@ -163,11 +170,11 @@ void METHOD_NAME(L_P, init)( L_T* this )
     L_VT->remove = &METHOD_NAME(L_P,  remove );
     L_VT->get = &METHOD_NAME(L_P,  get );
 
-		// while we're at it, let's create the vt for our nodes
-		// so we don't have to worry about it in the future
-		LN_VT = calloc( 1, sizeof( *LN_VT ) );
-	 	LN_VT->init = &METHOD_NAME(LN_P, init);
-		LN_VT->destroy = &METHOD_NAME(LN_P, destroy);
+    // while we're at it, let's create the vt for our nodes
+    // so we don't have to worry about it in the future
+    LN_VT = calloc( 1, sizeof( *LN_VT ) );
+    LN_VT->init = &METHOD_NAME(LN_P, init);
+    LN_VT->destroy = &METHOD_NAME(LN_P, destroy);
   } 
 
   this->fun = L_VT;
@@ -176,7 +183,7 @@ void METHOD_NAME(L_P, init)( L_T* this )
   this->size = 0;
 }
 
-void METHOD_NAME(L_P, destroy)( L_T* this )
+DEF_METHOD(void, L_P, destroy, L_T* this)
 {
   // if we have no elements, there's nothing to free
   if ( this->size == 0 ) return;
@@ -187,7 +194,7 @@ void METHOD_NAME(L_P, destroy)( L_T* this )
   while ( current->next != NULL )
   {
     LN_T* next = current->next;
-		LN_VT->destroy( next );
+    LN_VT->destroy( next );
     free( next );
   }
   LN_VT->destroy( current );
@@ -197,8 +204,7 @@ void METHOD_NAME(L_P, destroy)( L_T* this )
   memset( this, 0, sizeof( *this ) );
 }
 
-
-void METHOD_NAME(L_P, push)( L_T* this, REF_TYPE item )
+DEF_METHOD(void, L_P, push, L_T* this, REF_TYPE item)
 {
   LN_T* node = malloc( sizeof( LN_T ) );
   LN_VT->init( node, item );
@@ -217,7 +223,7 @@ void METHOD_NAME(L_P, push)( L_T* this, REF_TYPE item )
   this->size += 1;
 }
 
-void METHOD_NAME(L_P, enqueue)( L_T* this, REF_TYPE item )
+DEF_METHOD(void, L_P, enqueue,  L_T* this, REF_TYPE item)
 {
   LN_T* node = malloc( sizeof( LN_T ) );
   LN_VT->init( node, item );
@@ -236,17 +242,17 @@ void METHOD_NAME(L_P, enqueue)( L_T* this, REF_TYPE item )
   this->size += 1;
 }
 
-REF_TYPE METHOD_NAME(L_P, pop)( L_T* this )
+DEF_METHOD(REF_TYPE, L_P, pop, L_T* this)
 {
-	return L_VT->remove( this, 0 );
+  return L_VT->remove( this, 0 );
 }
 
-REF_TYPE METHOD_NAME(L_P, pop_back)( L_T* this )
+DEF_METHOD(REF_TYPE, L_P, pop_back,  L_T* this)
 {
-	return L_VT->remove( this, this->size - 1 );
+  return L_VT->remove( this, this->size - 1 );
 }
 
-REF_TYPE METHOD_NAME(L_P, remove)( L_T* this, unsigned int index )
+DEF_METHOD(REF_TYPE, L_P, remove, L_T* this, unsigned int index)
 {
   assert( this->size > index );
 
@@ -276,7 +282,7 @@ REF_TYPE METHOD_NAME(L_P, remove)( L_T* this, unsigned int index )
     this->head = current->next;
   }
 
-	LN_VT->destroy( current );
+        LN_VT->destroy( current );
   free( current );
 
   this->size -= 1;
@@ -284,7 +290,7 @@ REF_TYPE METHOD_NAME(L_P, remove)( L_T* this, unsigned int index )
   return item; 
 }
 
-CONST_REF_TYPE METHOD_NAME(L_P, get)( L_T* this, unsigned int index )
+DEF_METHOD(CONST_REF_TYPE, L_P, get, const L_T* this, unsigned int index)
 {
   // TODO start from back if index >= size/2
  
@@ -302,7 +308,10 @@ CONST_REF_TYPE METHOD_NAME(L_P, get)( L_T* this, unsigned int index )
 #endif
 }
 
+#endif // ifndef(HEADER_ONLY)
+
 // don't leak any of our preprocessor symbols
+#undef HEADER_ONLY
 #undef L_METHOD
 #undef LN_METHOD
 #undef L_VT
